@@ -175,7 +175,7 @@ type Animal = { name: string; };
 type Dog = Animal & { breed: string; };
 ```
 
-#### Generics
+#### Generic object types
 
 It is possible to have generics while declaring object types, similar to [generic types in Java](https://docs.oracle.com/javase/tutorial/java/generics/types.html). Generics make object types share a common object structure while providing the flexibility to define the types of inner properties for each object type.
 
@@ -233,6 +233,18 @@ While assigning non-constant JavaScript variables, TypeScript by default infer t
 const greetings1 = 'Hello world!';        // const greetings1: "Hello world!"
 let greetings2 = 'Hello world!';          // const greetings2: string
 let greetings3 = 'Hello world!' as const; // let greetings3: "Hello world!"
+```
+### Function Types
+
+The type of a function can be declared using either one of these:
+
+```typescript
+type StringConsumer = (arg: string) => void;
+
+type StringConsumer = {
+  (arg: string): void;
+  name: string; // functions can have properties in JavaScript
+};
 ```
 
 ## Type Manipulation
@@ -315,7 +327,7 @@ See [some other cases](https://github.com/microsoft/TypeScript/pull/31838) that 
 
 ### Keyof
 
-`keyof` is a unary operator that gives the union of the types of operand's property names, in literal types if possible.
+`keyof` is a unary operator that gives the union of the types of operand's property names, in [literal types](#literal-types) if possible.
 
 ```typescript
 type Point = { x: number; y: number; };
@@ -328,3 +340,61 @@ type Dictionary = {
 type B = keyof Dictionary;
 // type B = string | number
 ```
+
+### Indexed Access
+
+Indexed access type `[...]` gives the type of the indexed property on the target object type.
+
+```typescript
+type Person = { age: number; name: string; alive: boolean };
+type A = Person['age'];
+// type A = number
+type B = Person['age' | 'name'];
+// type B = number | string
+type C = Person[keyof Person]; // just like valueof
+// type C = number | string | boolean
+```
+
+### Generics
+
+We can extend the idea of [generic object types](#generic-object-types) to the creation of any type, not limited to object types. Basically, what we want is like a function with one or more types as parameters, and one return type that is created based on the type parameters.
+
+We can create an [unary operator](https://docs.oracle.com/javase/8/docs/api/java/util/function/UnaryOperator.html) type with generics:
+
+```typescript
+type UnaryOperator<T> = (arg: T) => T;
+
+// restriction on type parameters
+type TypeOfArray<T extends any[]> = T[number];
+
+// optional type parameters with default values
+type IdentityWithDefault<T = number> = T;
+```
+
+### Mapping
+
+Mapping is to create a new object type by iterating on a [union type](#union) with `in` keyword.
+
+```typescript
+type MakeBoolean<T> = {
+  [P in keyof T]: boolean;
+};
+
+type MakeReadonly<T> = {
+  readonly [P in keyof T]: T[P];
+}
+
+type MakeMutable<T> = {
+  -readonly [P in keyof T]: T[P];
+}
+
+type MakeOptional<T> = {
+  [P in keyof T]?: T[P];
+}
+
+type MakeConcrete<T> = {
+  [P in keyof T]-?: T[P];
+}
+```
+
+It is possible to map the property names to new ones, or drop them in the return type using type assertions. 
