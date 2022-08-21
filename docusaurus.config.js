@@ -8,11 +8,11 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Cheatsheet for Everything',
   tagline: 'A knowledge repository for myself',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://niqiukun.github.io',
   baseUrl: '/cheatsheet/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/books.png',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -37,14 +37,14 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/niqiukun/cheatsheet',
+            'https://github.com/niqiukun/cheatsheet/blob/master',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/niqiukun/cheatsheet',
+            'https://github.com/niqiukun/cheatsheet/blob/master',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -132,6 +132,18 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+        magicComments: [
+          {
+            className: 'theme-code-block-highlighted-line',
+            line: 'highlight-next-line',
+            block: {start: 'highlight-start', end: 'highlight-end'},
+          },
+          {
+            className: 'code-block-error-line',
+            line: 'error-next-line',
+            block: {start: 'error-start', end: 'error-end'},
+          },
+        ]
       },
     }),
 };
