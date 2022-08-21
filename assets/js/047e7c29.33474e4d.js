@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcheatsheet=self.webpackChunkcheatsheet||[]).push([[8751],{3528:e=>{e.exports=JSON.parse('{"label":"facebook","permalink":"/cheatsheet/blog/tags/facebook","allTagsPath":"/cheatsheet/blog/tags","count":1}')}}]);
