@@ -9,7 +9,7 @@ const config = {
   title: 'Cheatsheet for Everything',
   tagline: 'A knowledge repository for myself',
   url: 'https://your-docusaurus-test-site.com',
-  baseUrl: '/',
+  baseUrl: '/cheatsheet/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
