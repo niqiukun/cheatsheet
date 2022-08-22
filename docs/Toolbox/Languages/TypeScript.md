@@ -69,6 +69,14 @@ These type annotations corresponds to the 7 primitive types of JavaScript:
 
   Used to annotate the type of a variable in a state that will never be reached. For example, a function that will definitely throw an error has return type `never`.
 
+- `object`
+
+  Used to annotate anything that is not a [primitive type](#primitive-types). Note that functions are a subset of `object` type:
+
+  ```typescript
+  type result = Function extends object ? true : false;
+  // type result = true
+  ```
 ### Object Types
 
 The type of an object can be declared using either one of these:
@@ -183,7 +191,7 @@ It is possible to have generics while declaring object types, similar to [generi
 type Box<T> = { contents: T; };
 ```
 
-#### Array Type
+### Array Types
 
 The array type is just a special object type built-in properties like `length`, `pop`, `push`, etc. `T[]` is a shorthand for `Array<T>`. 
 
@@ -200,7 +208,7 @@ There are other generic types that are similar, such as `Map<K, V>`, `Set<T>`, a
 
 #### Tuple Types
 
-Tuple types are special cases of the array type with a fixed length and fixed types for each item.
+Tuple types are special cases of the array type with fixed types for items at certain indexes.
 
 ```typescript
 type MyTuple = [string, number, boolean];
@@ -212,6 +220,38 @@ type D = MyTuple['push'];   // type D = push(...items: (string | number | boolea
 type E = MyTuple[42];
 `Tuple type 'MyTuple' of length '3' has no element at index '42'. ts(2493)`
 // error-end
+```
+
+#### Spread Operator
+
+Note that tuple types does not necessarily have a fixed length. [A tuple type with variable length](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-0.html#variadic-tuple-types) can be constructed using the spread operator `...`:
+
+```typescript
+type MyVariadicTuple = [string, ...number[], boolean];
+type A = MyVariadicTuple[0];        // type A = string
+type B = MyVariadicTuple[1];        // type B = number | boolean
+type C = MyVariadicTuple[100];      // type C = number | boolean
+type D = MyVariadicTuple['length']; // type D = number
+```
+
+You can also obtain the type of the first or the last element in a tuple type with the spread operator:
+
+```typescript
+type First<T extends any[]> = T extends [infer F, ...infer R] ? F : never;
+type Last<T extends any[]> = T extends [...infer R, infer L] ? L : never;
+
+type A = First<[1, 2, 3]>;             // type A = 1
+type B = Last<['a', 'b', 'c']>;        // type B = 'c'
+type C = First<[]>;                    // type C = never
+type D = First<[string, ...number[]]>; // type D = string
+type E = Last<[string, ...number[]]>;  // type E = never
+```
+
+This does not work on non-tuple array types:
+
+```typescript
+type result4 = First<number[]>;
+// type result4 = never
 ```
 
 ### Literal Types
@@ -230,10 +270,38 @@ type result2 = One extends number ? true : false;
 While assigning non-constant JavaScript variables, TypeScript by default infer the variable to be of the primitive type. To make TypeScript understand that the variable is of a literal type, use `as const`:
 
 ```typescript
-const greetings1 = 'Hello world!';        // const greetings1: "Hello world!"
-let greetings2 = 'Hello world!';          // const greetings2: string
-let greetings3 = 'Hello world!' as const; // let greetings3: "Hello world!"
+const greetings1 = 'Hello world!';
+type A = typeof greetings1; // type A = "Hello world!"
+
+let greetings2 = 'Hello world!';          
+type B = typeof greetings2; // type B = string
+
+let greetings3 = 'Hello world!' as const;
+type C = typeof greetings3; // type C = "Hello world!"
 ```
+
+#### Array Literals
+
+TODO
+
+#### Tuple with Literal Types
+
+Similarly, when we write an array in JavaScript, it is inferred to be the primitive type array as well. To workaround this, we can also use `as const` to indicate that it is in fact a tuple with literal types:
+
+```typescript
+const array = [1, 2, 3];
+type A = typeof array; // type A = number[]
+
+const tuple = [1, 2, 3] as const;
+type B = typeof tuple; // type B = readonly [1, 2, 3]
+```
+
+Here, `readonly` keyword represents that the array follows is a tuple with literal types. We can also directly assign type aliases to tuples with literal types:
+
+```typescript
+type OneTwoThreeTuple = readonly [1, 2, 3];
+```
+
 ### Function Types
 
 The type of a function can be declared using either one of these:
@@ -315,7 +383,7 @@ function foo(bar: A & B) {
 }
 ```
 
-:::note Intersection of primitive types
+:::note Intersection of primitives
 
 You may be wondering why I didn't use `string & number` as an example, just like I did for intersection. Shouldn't the intersection type `string & number` contains both properties from `string` and `number`?
 
@@ -371,9 +439,33 @@ type TypeOfArray<T extends any[]> = T[number];
 type IdentityWithDefault<T = number> = T;
 ```
 
+When generics are used on functions, we can apply the same logic to a group of similar parameter types (under the same generic type, such as `Array<any>`) without duplicating the function many times. We can also annotate the function with a flexible return type which is based on the parameter generic type.
+
+```typescript
+declare function getFirstOfArray<T>(array: T[]): T;
+```
+
+What makes generics more powerful is that the generic types can be inferred from the context so that often there is no need to specify them explicitly:
+
+```typescript
+const firstItem1 = getFirstOfArray([1, 2, 3]);
+type result1 = typeof firstItem1; // type result1 = number
+
+const firstItem2 = getFirstOfArray(['a', 'b', 'c']);
+type result2 = typeof firstItem2; // type result2 = string
+
+const firstItem3 = getFirstOfArray([1, 2, 'surprise']);
+type result3 = typeof firstItem3; // type result3 = string | number
+
+// error-start
+const firstItem4 = getFirstOfArray(42);
+`Argument of type 'number' is not assignable to parameter of type 'unknown[]'. ts(2345)`
+// error-end
+```
+
 ### Mapping
 
-Mapping is to create a new object type by iterating on a [union type](#union) with `in` keyword.
+Mapping is to create a new object type by iterating on an object type with `in keyof` keyword.
 
 ```typescript
 type MakeBoolean<T> = {
@@ -397,4 +489,35 @@ type MakeConcrete<T> = {
 }
 ```
 
-It is possible to map the property names to new ones, or drop them in the return type using type assertions. 
+It is possible to map the property names to new ones, or drop them in the return type using type assertions to `never`.
+
+:::note Mapping on primitives
+
+What happens if mapping is performed on a primitive type? Well, it will just give the primitive type. This is [intended](https://github.com/microsoft/TypeScript/issues/40012).
+
+```typescript
+type MakeBoolean<T> = {
+  [P in keyof T]: boolean;
+};
+
+type result1 = keyof string;
+// type result1 = number | typeof Symbol.iterator | "length" | "toString" | "concat" | ...
+type result2 = MakeBoolean<string>;
+// type result2 = string
+```
+
+:::
+
+:::note Mapping on union types
+
+When mapping is carried out on a union type, the individual types in a union are mapped:
+
+```typescript
+type A = { foo: string; };
+type B = { bar: number; };
+
+type result1 = keyof (A | B);
+// type result1 = never
+type result2 = MakeBoolean<A | B>;
+// type result2 = { foo: boolean; } | { bar: boolean; }
+```
