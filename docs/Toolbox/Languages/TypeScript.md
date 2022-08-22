@@ -206,7 +206,7 @@ interface Array<T> {
 
 There are other generic types that are similar, such as `Map<K, V>`, `Set<T>`, and `Promise<T>`.
 
-#### Tuple Types
+#### Tuple types
 
 Tuple types are special cases of the array type with fixed types for items at certain indexes.
 
@@ -222,7 +222,7 @@ type E = MyTuple[42];
 // error-end
 ```
 
-#### Spread Operator
+#### Spread operator
 
 Note that tuple types does not necessarily have a fixed length. [A tuple type with variable length](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-0.html#variadic-tuple-types) can be constructed using the spread operator `...`:
 
@@ -254,6 +254,17 @@ type result4 = First<number[]>;
 // type result4 = never
 ```
 
+#### Readonly arrays
+
+Readonly arrays are array types that do not allow modification, such as re-assigning values to array elements and pushing to / popping from the array. `readonly T[]` is a shorthand for `ReadonlyArray<T>`. Note its difference with [readonly properties of object types](#readonly-properties): you can only assign a mutable array to a variable of an readonly array type.
+
+```typescript
+type result1 = readonly number[] extends number[] ? true : false;
+// type result1 = false
+type result2 = number[] extends readonly number[] ? true : false;
+// type result2 = true
+```
+
 ### Literal Types
 
 There are times when we hope to define a type that is more specific than the primitive types. Instead of representing all strings or numbers, we probably want to represent an element of them: for example, `"foo"` for string, or `1` for number. Such specific types are known as literal types.
@@ -280,11 +291,13 @@ let greetings3 = 'Hello world!' as const;
 type C = typeof greetings3; // type C = "Hello world!"
 ```
 
-#### Array Literals
+#### Tuple with literal types
 
-TODO
+We can also declare a tuple type with literal types:
 
-#### Tuple with Literal Types
+```typescript
+const OneTwoThreeTuple = [1, 2, 3];
+```
 
 Similarly, when we write an array in JavaScript, it is inferred to be the primitive type array as well. To workaround this, we can also use `as const` to indicate that it is in fact a tuple with literal types:
 
@@ -296,11 +309,7 @@ const tuple = [1, 2, 3] as const;
 type B = typeof tuple; // type B = readonly [1, 2, 3]
 ```
 
-Here, `readonly` keyword represents that the array follows is a tuple with literal types. We can also directly assign type aliases to tuples with literal types:
-
-```typescript
-type OneTwoThreeTuple = readonly [1, 2, 3];
-```
+Note that the tuple type inferred with `as const` keyword is also a [readonly array](#readonly-array).
 
 ### Function Types
 
@@ -461,6 +470,27 @@ type result3 = typeof firstItem3; // type result3 = string | number
 const firstItem4 = getFirstOfArray(42);
 `Argument of type 'number' is not assignable to parameter of type 'unknown[]'. ts(2345)`
 // error-end
+```
+
+Note that the generic type parameter `T` can be a component of the function parameter. Using this, we can easily unwrap the types for function parameters:
+
+```typescript
+declare function makeMutable<T>(immutable: readonly T[]): T[];
+const a = makeMutable([1, 2, 3] as ReadonlyArray<number>);
+type A = typeof a; // type A = number[]
+
+declare function awaitPromise<T>(promise: Promise<T>): T;
+const b = awaitPromise(Promise.resolve(1 + 2));
+type B = typeof b; // type B = number
+
+// an interesting usage is to maintain the tuple type structure of parameters:
+declare function getArrayIdentity<T extends any[]>(array: T): T;
+const c = getArrayIdentity([1, 2, 3]);
+type C = typeof c; // type C = number[]
+
+declare function getTupleIdentity<T extends any[]>(tuple: [...T]): T;
+const d = getTupleIdentity([1, 2, 3]);
+type D = typeof d; // type D = [number, number, number]
 ```
 
 ### Mapping
