@@ -345,6 +345,24 @@ Note that they work similarly, but aliasing essentially means `MyNumber` is dire
 
 The conditional in TypeScript, `A extends B ? C : D`, gives C if A [extends](#basic-concepts) B, and D otherwise. While it looks the same as the conditional clause in JavaScript, it should not be confused together because unlike in JavaScript, `A extends B` is not a valid statement and does not give a type as return value. You must always specify the return type explicitly after extends.
 
+#### Distributive conditionals
+
+With generics, conditionals become distributive given the generic type is a union type:
+
+```typescript
+type ToArray<T> = T extends any ? T[] : never;
+type result = ToArray<string | number>;
+// type result = string[] | number[]
+```
+
+Note that `extends any` iterate through all types in a union. With other conditions, we can easily apply a filter on union types:
+
+```typescript
+type FilterArray<T> = T extends any[] ? T : never;
+type result = FilterArray<string[] | number | boolean[]>;
+// type result = string[] | boolean[]
+```
+
 ### Union
 
 The union operator `|` is a binary operator that creates a type representing either one of the operands. Specifically, both operands are extending the union type, but others don't:
