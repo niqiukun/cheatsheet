@@ -36,15 +36,13 @@ const config = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/niqiukun/cheatsheet/blob/master',
+          editUrl: 'https://github.com/niqiukun/cheatsheet/blob/master',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/niqiukun/cheatsheet/blob/master',
+          editUrl: 'https://github.com/niqiukun/cheatsheet/blob/master',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -81,7 +79,7 @@ const config = {
             sidebarId: 'docusaurusSidebar',
             label: 'Docusaurus',
           },
-          {to: '/blog', label: 'Blog', position: 'left'},
+          { to: '/blog', label: 'Blog', position: 'left' },
           {
             href: 'https://github.com/niqiukun/cheatsheet',
             label: 'GitHub',
@@ -136,16 +134,18 @@ const config = {
           {
             className: 'theme-code-block-highlighted-line',
             line: 'highlight-next-line',
-            block: {start: 'highlight-start', end: 'highlight-end'},
+            block: { start: 'highlight-start', end: 'highlight-end' },
           },
           {
             className: 'code-block-error-line',
             line: 'error-next-line',
-            block: {start: 'error-start', end: 'error-end'},
+            block: { start: 'error-start', end: 'error-end' },
           },
-        ]
+        ],
       },
     }),
+
+  themes: ['@docusaurus/theme-live-codeblock'],
 };
 
 module.exports = config;
