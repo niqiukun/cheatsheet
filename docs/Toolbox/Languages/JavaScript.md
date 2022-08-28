@@ -23,7 +23,7 @@ class Animal {
   name: string;
   noise: string;
 
-  constructor(name: string, noise: string = 'foo') {
+  constructor(name: string, noise: string = 'bar') {
     this.name = name;
     this.noise = noise;
   }
@@ -164,9 +164,9 @@ bar1; // { name: 'foo1', noise: 'bar', saySomething: f(), ... }
 bar2; // { name: 'foo2', noise: 'bar', saySomething: f(), ... }
 ```
 
-Do you notice it? The function `saySomething` duplicates in all objects initialized, although we know that it is not going to differ between objects created with the same constructor. That is going to take up much unnecessary memory space. (Same for `noise` as well, but we will discuss about that later.)
+Do you notice it? The function `saySomething` duplicates in all objects initialized, although we know that it is not going to differ between objects instantiated with the same constructor. That is going to take up much unnecessary memory space. (Same for `noise` as well, but we will discuss about that later.)
 
-How do we solve this issue? Well, it would be great if we can have a common object that contains the function `saySomething`. All objects created by the constructor can just refer to the methods defined in this common object.
+How do we solve this issue? Well, it would be great if we can have a common object that contains the function `saySomething`. All objects instantiated by the constructor can just refer to the methods defined in this common object.
 
 This common object is known as the prototype.
 
@@ -197,7 +197,7 @@ bar1; // { name: 'foo1', noise: 'bar', [[Prototype]]: Object }
 bar2; // { name: 'foo1', noise: 'bar', [[Prototype]]: Object }
 ```
 
-If you expand `[[Prototype]]` in DevTool's console, you will see:
+If you expand `[[Prototype]]` in DevTools' console, you will see:
 
 ```js
 [[Prototype]]: {
@@ -207,6 +207,10 @@ If you expand `[[Prototype]]` in DevTool's console, you will see:
 ```
 
 While it may not be obvious, but `saySomething` is not duplicated anymore and only exists in `Animal.prototype`. The one you see is exactly `Animal.prototype`, evaluated when `[[Prototype]]` is actually expanded.
+
+The special thing about `[[Prototype]]` internal property is that when you call something like `bar.saySomething()`, it first search for property `saySomething` in the object's own property scope, and if it is not found, search for the property in the object's prototype scope.
+
+Maybe you already think that it starts to feel like inheritance. Exactly. Let's move on to chain up the prototypes of objects to achieve the real inheritance that we want.
 
 :::tip Accessing `[[Prototype]]`
 
@@ -222,7 +226,7 @@ Object.getPrototypeOf(bar1) === Animal.prototype; // true
 
 :::danger Mutating `prototype` property
 
-It is advised not to mutate or reassign the `prototype` property of constructors other than initializing methods, to avoid unexpected behaviors:
+It is advised not to mutate or reassign the `prototype` property of constructors other than initializing methods, to avoid unexpected or inconsistent behaviors:
 
 ```typescript
 const bar = new Animal('Foo');
@@ -240,3 +244,185 @@ bar.saySomething(); // Foo says something!
 ```
 
 :::
+
+### Inheritance Chains
+
+Now how do we chain up prototypes of objects? One thing that immediately comes up in your mind is probably to use `Object.setPrototypeOf` method. Well, this is half correct: but the real question is what is the object that we want to set new prototype on, and where is this new prototype coming from.
+
+One may be temped to set the prototype directly on instantiated objects. If you have followed me until this point, you know that it is not going to work. If we completely alter the prototype of an object, it no longer have access to the properties on the previous prototype, and hence the ability that it used to have. This is obviously not we want:
+
+```typescript
+function Cat(name: string) {
+  this.name = name;
+  this.noise = 'meow~';
+}
+Cat.prototype.doSomething = function () {
+  console.log(`${this.name} is sleeping.`);
+};
+
+const cat = new Cat('Mimi');
+// highlight-next-line
+Object.setPrototypeOf(cat, Cat.prototype);
+cat.doSomething(); // Mimi is sleeping.
+// error-start
+cat.saySomething();
+`TypeError: cat.saySomething is not a function`;
+// error-end
+```
+
+How do we retain the original properties of the object's prototype, while being able to access new properties? The answer is simply: to use prototype itself. But this time, we are setting the prototype, or the `[[Prototype]]` inner property, of the constructor's `prototype` property.
+
+```typescript
+function Cat(name: string) {
+  // a bit incorrect, but let's fix it later
+  this.name = name;
+  this.noise = 'meow~';
+}
+// highlight-next-line
+Object.setPrototypeOf(Cat.prototype, Animal.prototype);
+Cat.prototype.doSomething = function () {
+  console.log(`${this.name} is sleeping.`);
+};
+
+const cat = new Cat('Mimi');
+cat.doSomething(); // Mimi is sleeping.
+cat.saySomething(); // Mimi says: meow~
+```
+
+Let's inspect `cat` in DevTools to understand what is happening:
+
+```typescript
+{
+  name: 'Mimi',
+  noise: 'meow~',
+  [[Prototype]]: { // Cat.prototype
+    doSomething: f(),
+    constructor: f Cat(name),
+    [[Prototype]]: { // Animal.prototype
+      saySomething: f(),
+      constructor: f Animal(name, noise = 'foo'),
+    },
+  },
+}
+```
+
+We have successfully created a prototype chain! When we call `cat.saySomething()`, it first tries to find `saySomething` in `cat`'s own property. When it is not found, it searches within the prototype of `cat`, that is `Cat.prototype`'s own property. When it is still not found, it searches the prototype of `Cat.prototype`, that is `Animal.prototype`'s own property. Finally, it found `saySomething` there.
+
+:::tip Own property
+
+We refer something's own property as an object's property that does not need to be searched further within the object's prototype. In the above example, `name` and `noise` are own properties of `cat`. We can verify this:
+
+```typescript
+cat.hasOwnProperty('name'); // true
+cat.hasOwnProperty('noise'); // true
+cat.hasOwnProperty('doSomething'); // false
+Object.getPrototypeOf(cat).hasOwnProperty('doSomething'); // true
+```
+
+:::
+
+We are pretty close to the original class implementation right now. One last question is how do we achieve `super()`, like in child class's constructor?
+
+We follow the same idea as `super`: instead of assigning the initial properties ourselves, we make use of the constructor of the parent "class":
+
+```typescript
+function Cat(name: string) {
+  Animal.prototype.constructor.call(this, name, 'meow~');
+}
+Object.setPrototypeOf(Cat.prototype, Animal.prototype);
+```
+
+:::info What is `call`?
+
+`someFunction.call(someObject, ...)` is a way to call function `someFunction`, but with the context object `this` within the function pointing to `someObject`.
+
+Why we need to use `constructor.call(this, ...)` here, instead of directly invoking `constructor(...)`? That is because we want to set the properties like `name` on the instance of `Cat`, but not on the instance of `Animal.prototype`.
+
+See what happens if we invoke the constructor directly:
+
+```typescript
+function Cat(name: string) {
+  Animal.prototype.constructor(name, 'meow~');
+}
+Object.setPrototypeOf(Cat.prototype, Animal.prototype);
+Cat.prototype.doSomething = function () {
+  console.log(`${this.name} is sleeping.`);
+};
+
+const cat = new Cat('Mimi');
+cat.doSomething(); // Mimi is sleeping.
+
+const cat2 = new Cat('Miantiao');
+cat2.doSomething(); // Miantiao is sleeping.
+cat.doSomething(); // Miantiao is sleeping.
+// What happened to Mimi???
+```
+
+If we inspect `cat` under DevTools, we will realize what is wrong here:
+
+```typescript
+{
+  // name is not here...?
+  [[Prototype]]: { // Cat.prototype
+    doSomething: f(),
+    constructor: f Cat(name),
+    [[Prototype]]: { // Animal.prototype
+      // highlight-next-line
+      name: 'Miantiao', // name is here!
+      noise: 'meow~',
+      saySomething: f(),
+      constructor: f Animal(name, noise = 'foo'),
+    },
+  }
+}
+```
+
+The constructor incorrectly sets the properties `name` and `noise` on `Animal.prototype` because `this` within the constructor `Animal` is pointing to `Animal.prototype`. When `cat2` is instantiated, it overwrites the property `name` inside `Animal.prototype` from `'Mimi'` to `'Miantiao'`. To prevent this, we need to specify `this` when calling the constructor `Animal` to ensure that the properties are assigned correctly.
+
+:::
+
+### Conclusion
+
+Here is the original class inheritance implemented with prototype:
+
+```typescript
+// class Animal
+function Animal(name: string, noise: string = 'bar') {
+  this.name = name;
+  this.noise = noise;
+}
+
+Animal.prototype.saySomething = function () {
+  console.log(`${this.name} says: ${this.noise}`);
+};
+
+// class Cat
+function Cat(name: string) {
+  Animal.prototype.constructor.call(this, name, 'meow~');
+}
+// extends Animal
+Object.setPrototypeOf(Cat.prototype, Animal.prototype);
+
+Cat.prototype.doSomething = function () {
+  console.log(`${this.name} is sleeping.`);
+};
+
+// class Dog
+function Dog(name: string) {
+  Animal.prototype.constructor.call(this, name, 'woof!');
+}
+// extends Animal
+Object.setPrototypeOf(Dog.prototype, Animal.prototype);
+
+Dog.prototype.doSomething = function () {
+  console.log(`${this.name} is running around.`);
+};
+
+const dog = new Dog('Lele');
+dog.saySomething(); // Lele says: woof!
+dog.doSomething(); // Lele is running around.
+
+const cat = new Cat('Mimi');
+cat.saySomething(); // Mimi says: meow~
+cat.doSomething(); // Mimi is sleeping.
+```
