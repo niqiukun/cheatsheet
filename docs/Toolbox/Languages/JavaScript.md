@@ -222,6 +222,8 @@ With this, we can verify that the `[[Prototype]]` of the object is indeed the sa
 Object.getPrototypeOf(bar1) === Animal.prototype; // true
 ```
 
+`obj.__proto__` is equivalent to `Object.getPrototypeOf(obj)` in most JavaScript engines. However, this is [non-standard and should be avoided](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/proto).
+
 :::
 
 :::danger Mutating `prototype` property
