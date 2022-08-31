@@ -1,5 +1,79 @@
 # JavaScript
 
+## This
+
+### Apply, Bind and Call
+
+`apply()`, `bind()`, and `call()` are builtin methods of functions in JavaScript. (They are members of [`Function.prototype`](#prototype).) The differences between them and direct function invocation are mainly: 1) what the context object, `this`, is pointing to within the function, and 2) the way function parameters are passed in.
+
+Here is one simple example:
+
+```typescript
+class Person {
+  name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
+}
+
+function sing(employer: string, has: string[]) {
+  const hasParsed = has.map(has => `a ${has}`).join(' and ');
+  console.log(
+    `Hi, my name is ${this.name} and I work in a ${employer}, I've got ${hasParsed}.`
+  );
+}
+
+const joe = new Person('Joe');
+```
+
+The function `sing` does not work when you try to call it directly:
+
+```typescript
+function sing(employer: string, has: string[]) {
+  const hasParsed = has.map(has => `a ${has}`).join(' and ');
+  // error-start
+  console.log(
+    `Hi, my name is ${this.name} and I work in a ${employer}, I've got ${hasParsed}.`
+  );
+  `TypeError: Cannot read properties of undefined (reading 'name')`;
+  // error-end
+}
+
+sing('button factory', ['wife', 'dog', 'family']);
+```
+
+Let's see how can we use the function with `apply`, `call`, and `bind`.
+
+#### `apply(thisArg: any, argArray?: any[])`
+
+`apply` calls the function with the first parameter as the `this` context object, and the second parameter as the parameters of the function.
+
+```typescript
+sing.apply(joe, ['button factory', ['wife', 'dog', 'family']]);
+// Hi, my name is Joe and I work in a button factory, I've got a wife and a dog and a family.
+```
+
+#### `call(thisArg: any, ...argArray: any[])`
+
+`call` calls the function with the first parameter as the `this` context object, and the remaining parameters as the parameters of the function.
+
+```typescript
+sing.call(joe, 'button factory', ['wife', 'dog', 'family']);
+// Hi, my name is Joe and I work in a button factory, I've got a wife and a dog and a family.
+```
+
+#### `bind(thisArg: any)`
+
+`bind` is the most special among the three, where it creates a new function with the `this` context object referring to a give object for subsequent direct invocations.
+
+```typescript
+const joeSings = sing.bind(joe);
+joeSings('button factory', ['wife', 'dog', 'family']);
+// Hi, my name is Joe and I work in a button factory, I've got a wife and a dog and a family.
+```
+
+#### Use cases
+
 ## Prototype
 
 :::caution Why prototype?
