@@ -72,7 +72,15 @@ joeSings('button factory', ['wife', 'dog', 'family']);
 // Hi, my name is Joe and I work in a button factory, I've got a wife and a dog and a family.
 ```
 
-#### Use cases
+### Use Cases of Function Built-ins
+
+Well, good to know all this, but you probably have never used them in your daily work. ~~Who writes such convoluted code with the actionable object inside the function parameters? Who anyhow changes the `this` object until the point no one knows what `this` really is?~~ What's the point of memorizing them if they are not used at all ~~except for preparing interviews~~?
+
+Good point, so here we list some use cases that you may ~~or may not~~ encounter in future. I mean if you never come to know these functions, you will never think about using them when you encounter a similar situation! ~~If this is the case, go ahead with better alternatives!~~
+
+#### Inheritance with prototype
+
+In inheritance using prototype, you need to use either `apply` or `call` to ensure that the parent function is setting properties of the child object. See [inheritance with the prototype chain](#inheritance-chains). ~~To be honest, just use classes.~~
 
 ## Prototype
 
