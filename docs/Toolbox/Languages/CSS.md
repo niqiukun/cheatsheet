@@ -1,5 +1,79 @@
 # CSS
 
+## Selectors
+
+The selectors in CSS determine the elements to apply respective styles on. If there are multiple elements matching a selector, all these elements will be selected and styled.
+
+### Type of Selectors
+
+- **Type selector**
+
+  ```css
+  h1 {
+    /* ... */
+  }
+  ```
+
+  Selects the element if the type of the element (the tag name) matches the selector. Cannot be chained after other selectors. Have low specificity.
+
+  The **universal selector** is a special type selector that selects all types of elements:
+
+  ```css
+  * {
+    /* ... */
+  }
+  ```
+
+- **Class selector**
+
+  ```css
+  .main-content {
+    /* ... */
+  }
+  ```
+
+  Selects the element if the element includes the class name specified in the selector.
+
+  Can be chained after other selectors:
+
+  ```css
+  div.page-wrapper.document-page {
+    /* ... */
+  }
+  ```
+
+  By chaining selectors, all selectors must be satisfied to match an element.
+
+  The **pseudo-class selector** is just like a class selector but works with [pseudo-classes](https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes): classes that are not actually applied to the elements but can be used to match elements in a certain state. Such state can be the state of the element itself (`:invalid` for `<input>`), due to user interaction (`:hover` or `:focus`), or related to where the element is positioned in the document tree (`:first-child`, `:last-child`, `:nth-child`).
+
+  Pseudo-class selectors can be chained after other selectors.
+
+  ```css
+  a:hover {
+    /* ... */
+  }
+  ```
+
+- **Attribute selector**
+
+  ```css
+  [attr='value'] {
+    /* ... */
+  }
+  ```
+
+  Selects the element if the element's attribute matches the condition specified by the selector. For the full list of conditions available, [refer to here](https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Selectors/Attribute_selectors). Can be chained after other selectors.
+
+- **ID selector**
+
+  ```css
+  #sidebar-quicklinks {
+    /* ... */
+  }
+  ```
+
+  Selects the element if the element id matches the selector. Can be chained after other selectors. You should not expect selecting multiple elements using ID selectors since the elements are supposed to have unique IDs. Have high specificity.
+
 ## Box Model
 
 ### Display Types
