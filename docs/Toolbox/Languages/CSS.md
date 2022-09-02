@@ -54,6 +54,16 @@ The selectors in CSS determine the elements to apply respective styles on. If th
   }
   ```
 
+  **Pseudo elements** are not actual HTML elements but refer to special parts of HTML elements that can be selected by the **pseudo-element selector**. For example, `::first-line` selects the first line of text in an element.
+
+  ```css
+  p::first-line {
+    /* ... */
+  }
+  ```
+
+  Pseudo elements can also be generated with the pseudo-element selector. For example, `::before` and `::after` generate pseudo-elements before and after an element with the `content` property. Note that the `content` property is required for the pseudo-element to show, so an empty content `content: ""` can be used in this case.
+
 - **Attribute selector**
 
   ```css
@@ -73,6 +83,8 @@ The selectors in CSS determine the elements to apply respective styles on. If th
   ```
 
   Selects the element if the element id matches the selector. Can be chained after other selectors. You should not expect selecting multiple elements using ID selectors since the elements are supposed to have unique IDs. Have high specificity.
+
+### Combining Selectors
 
 ## Box Model
 
