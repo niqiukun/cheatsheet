@@ -2,6 +2,26 @@
 
 ## This
 
+`this` is the context object that points to different objects depending on the context.
+
+### Contexts
+
+- **Global**
+
+  Without any context, `this` refers to the global object: the `globalThis` property in NodeJS, or `window` in browsers.
+
+- **Function**
+
+  In a function, `this` depends on how the function is called. If the function is called directly, `this` also refers to the global object. In a constructor called with `new` keyword, `this` refers to the newly created object instead. In [a function called with `call` or `apply` or a bound function created with `bind`](#apply-bind-and-call), `this` depends on the actual function parameters.
+
+  If the function is a method of an object, `this` refers to the object itself.
+
+  Note that in an arrow function, `this` takes the value of its outer context (`this` outside the function). This is determined when the arrow function is created and is regardless of when it is called. Even if the arrow function is a method of an object, `this` is taken from the context outside the object.
+
+- **Class**
+
+  In a base class, `this` refers to an instance of the class. In a derived class, `this` refers to an instance of the class only after the parent constructor `super` is called.
+
 ### Apply, Bind and Call
 
 `apply()`, `bind()`, and `call()` are builtin methods of functions in JavaScript. (They are members of [`Function.prototype`](#prototype).) The differences between them and direct function invocation are mainly: 1) what the context object, `this`, is pointing to within the function, and 2) the way function parameters are passed in.
@@ -71,6 +91,22 @@ const joeSings = sing.bind(joe);
 joeSings('button factory', ['wife', 'dog', 'family']);
 // Hi, my name is Joe and I work in a button factory, I've got a wife and a dog and a family.
 ```
+
+<details>
+
+<summary>Implementing bind</summary>
+
+Here is how `bind` can be implemented by hand, using [a function wrapper pattern](#wrapping-a-function):
+
+```javascript
+function bind(func, thisArg) {
+  return function (...args) {
+    return func.apply(thisArg, args);
+  };
+}
+```
+
+</details>
 
 ### Use Cases of Function Built-ins
 
@@ -836,5 +872,27 @@ function Example() {
       <button onClick={() => throttledTriggerEvent()}>Click me!</button>
     </div>
   );
+}
+```
+
+## Currying
+
+Currying is to transform a function with many parameters to a function that take in each parameter one by one. With a curried function, a multi-stage process on some data can be split up and chained up easily, without the need to write everything as the function parameters at one go.
+
+```javascript
+function curry(func) {
+  // return a curried function that ...
+  return function curried(...args) {
+    // if having equal (or more) parameters than original function
+    if (args.length >= func.length) {
+      // return result from original function
+      return func.apply(this, args);
+    }
+    // return a function that expect the rest of the parameters
+    return function (...restArgs) {
+      // recursive call with all parameters gathered so far
+      return curried(this, args.concat(restArgs));
+    };
+  };
 }
 ```
