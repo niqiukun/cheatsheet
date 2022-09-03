@@ -76,11 +76,77 @@ joeSings('button factory', ['wife', 'dog', 'family']);
 
 Well, good to know all this, but you probably have never used them in your daily work. ~~Who writes such convoluted code with the actionable object inside the function parameters? Who anyhow changes the `this` object until the point no one knows what `this` really is?~~ What's the point of memorizing them if they are not used at all ~~except for preparing interviews~~?
 
-Good point, so here we list some use cases that you may ~~or may not~~ encounter in future. I mean if you never come to know these functions, you will never think about using them when you encounter a similar situation! ~~If this is the case, go ahead with better alternatives!~~
+Good point, so here we list some use cases that you may ~~or may not~~ encounter in future. I mean if you never come to know these functions, you will never think about using them when you encounter a similar situation!
 
 #### Inheritance with prototype
 
 In inheritance using prototype, you need to use either `apply` or `call` to ensure that the parent function is setting properties of the child object. See [inheritance with the prototype chain](#inheritance-chains). ~~To be honest, just use classes.~~
+
+#### Wrapping a function
+
+`apply` becomes truly handy when it comes to wrapping a function. Wrapping a function is to create a new function based on an existing function, usually with additional behaviors. For example, the following is a wrapping function to print out function parameters and return value:
+
+```typescript
+function wrapWithPrint<T extends any[], U>(func: (...args: T) => U) {
+  return function (...args: T) {
+    console.log(`${func.name} is called with ${args}`);
+    const result = func.apply(this, args) as U;
+    console.log(`${func.name} returns ${result}`);
+    return result;
+  };
+}
+```
+
+Let's try this out:
+
+```typescript
+function add(a: number, b: number) {
+  return a + b;
+}
+
+const wrappedAdd = wrapWithPrint(add);
+wrappedAdd(5, 3);
+// add is called with 5,3
+// add returns 8
+```
+
+Now why is `apply` useful here? Because you always want the context object `this` stay the same before and after wrapping. Let's take a look at the example here:
+
+```typescript
+class Person {
+  name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  saySomething(to: string) {
+    console.log(`Hi ${to}, my name is ${this.name}.`);
+  }
+}
+
+const joe = new Person('Joe');
+joe.saySomething = wrapWithPrint(joe.saySomething);
+joe.saySomething('Tony');
+// saySomething is called with Tony
+// Hi Tony, my name is Joe.
+// saySomething returns undefined
+```
+
+This example will not work without `apply`! This is because by calling the function directly, the context object within the function is set to the current context object where the call takes place, in this case `globalThis` or `window`:
+
+```typescript
+function wrapWithPrint<T extends any[], U>(func: (...args: T) => U) {
+  return function (...args: T) {
+    console.log(`${func.name} is called with ${args}`);
+    const result = func(...args); // this === globalThis
+    console.log(`${func.name} returns ${result}`);
+    return result;
+  };
+}
+```
+
+As a result, accessing `this.name` in `saySomething` result in reading property `name` on `globalThis` and gives `undefined`. By using `apply` function, we ensure that `this` is consistent with when the wrapper function is actually called.
 
 ## Prototype
 
@@ -509,4 +575,266 @@ dog.doSomething(); // Lele is running around.
 const cat = new Cat('Mimi');
 cat.saySomething(); // Mimi says: meow~
 cat.doSomething(); // Mimi is sleeping.
+```
+
+## Debounce and Throttle
+
+Debounce and throttle are commonly used techniques to prevent the same action from happening many times within a short period of time, usually to reduce the frequency of API requests or form submissions.
+
+The difference between the two is that debounce is to delay the same action until a period of no action has passed, while throttle is to disallow the same action within a period of time after the action has just been triggered.
+
+Here, let's begin our example with a simple action:
+
+```jsx live
+function Example() {
+  function triggerEvent() {
+    console.log('Event triggered!');
+  }
+
+  return (
+    <div>
+      <button onClick={() => triggerEvent()}>Click me!</button>
+    </div>
+  );
+}
+```
+
+### Debounce
+
+Let's design a debounce function:
+
+```javascript
+async function debounce(func, time) {
+  // return debounced version of func
+  return func;
+}
+```
+
+Our first goal is to delay the function execution until a period of inactivity. Let's implement delaying of the function first with [a wrapping function](#wrapping-a-function):
+
+```jsx live
+function Example() {
+  function wait(time) {
+    return new Promise(resolve => {
+      setTimeout(resolve, time);
+    });
+  }
+
+  function debounce(func, time) {
+    return function (...args) {
+      return wait(time).then(() => {
+        func.apply(this, args);
+      });
+    };
+  }
+
+  function triggerEvent() {
+    console.log('Event triggered!');
+  }
+  const debouncedTriggerEvent = debounce(triggerEvent, 1000);
+
+  return (
+    <div>
+      <button onClick={() => debouncedTriggerEvent()}>Click me!</button>
+    </div>
+  );
+}
+```
+
+Great! The event is now delayed for 1s before being triggered. However, we have not achieved our goal yet: to cancel the current event if there is a new call within 1s.
+
+Let's think about how to do this. First, it would be great if we can cancel the wait if there is a new event call. But the current `setTimeout` cannot be cancelled half way. How can we make it cancellable?
+
+Let's first modify the `wait` function to return a promise but with a cancel function:
+
+```jsx live
+function Timer() {
+  class CancellablePromise extends Promise {
+    constructor(executor, cancelCallback) {
+      let cancel;
+      function wrapExecutor(executor) {
+        return function (resolve, reject) {
+          cancel = () => {
+            cancelCallback();
+            reject();
+          };
+          executor.call(this, resolve, reject);
+        };
+      }
+      super(wrapExecutor(executor));
+      this.cancel = cancel;
+    }
+  }
+
+  function cancellableWait(time) {
+    let timer = null;
+    return new CancellablePromise(
+      (resolve, reject) => {
+        timer = setTimeout(resolve, time);
+      },
+      () => {
+        timer && clearTimeout(timer);
+      }
+    );
+  }
+
+  const timerPromise = useRef();
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          console.log('Timer starts!');
+          timerPromise.current = cancellableWait(5000);
+          timerPromise.current
+            .then(() => {
+              console.log('5 seconds has passed!');
+            })
+            .catch(() => {
+              console.log('Timer cancelled...');
+            });
+        }}
+      >
+        Start
+      </button>
+      <button
+        onClick={() => {
+          timerPromise.current && timerPromise.current.cancel();
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+```
+
+Wow it works! Now we can use our cancellable wait in the debounce function:
+
+```jsx live
+function Example() {
+  class CancellablePromise extends Promise {
+    constructor(executor, cancelCallback) {
+      let cancel;
+      function wrapExecutor(executor) {
+        return function (resolve, reject) {
+          cancel = () => {
+            cancelCallback();
+            reject();
+          };
+          executor.call(this, resolve, reject);
+        };
+      }
+      super(wrapExecutor(executor));
+      this.cancel = cancel;
+    }
+  }
+
+  function cancellableWait(time) {
+    let timer = null;
+    return new CancellablePromise(
+      (resolve, reject) => {
+        timer = setTimeout(resolve, time);
+      },
+      () => {
+        timer && clearTimeout(timer);
+      }
+    );
+  }
+
+  function debounce(func, time) {
+    let cancellablePromise;
+    return function (...args) {
+      cancellablePromise && cancellablePromise.cancel();
+      cancellablePromise = cancellableWait(time);
+      return cancellablePromise
+        .then(() => {
+          func.apply(this, args);
+        })
+        .catch(() => {
+          // do nothing
+        });
+    };
+  }
+
+  function triggerEvent() {
+    console.log('Event triggered!');
+  }
+  const debouncedTriggerEvent = debounce(triggerEvent, 1000);
+
+  return (
+    <div>
+      <button onClick={() => debouncedTriggerEvent()}>Click me!</button>
+    </div>
+  );
+}
+```
+
+### Throttle
+
+Let's design a throttle function:
+
+```javascript
+function throttle(func, time) {
+  // return throttled version of func
+  return func;
+}
+```
+
+Inside this function, we should keep a flag to indicate whether there is a event triggered recently, and prevent the event from triggering if this is the case:
+
+```javascript
+function throttle(func, time) {
+  let recentlyExecuted = false;
+  return function (...args) {
+    if (recentlyExecuted) return;
+    func.apply(this, args);
+    recentlyExecuted = true;
+  };
+}
+```
+
+Now we need to reset this flag once this period has passed:
+
+```javascript
+function throttle(func, time) {
+  let recentlyExecuted = false;
+  return function (...args) {
+    if (recentlyExecuted) return;
+    func.apply(this, args);
+    recentlyExecuted = true;
+    setTimeout(() => {
+      recentlyExecuted = false;
+    }, time);
+  };
+}
+```
+
+Let's try it!
+
+```jsx live
+function Example() {
+  function throttle(func, time) {
+    let recentlyExecuted = false;
+    return function (...args) {
+      if (recentlyExecuted) return;
+      func.apply(this, args);
+      recentlyExecuted = true;
+      setTimeout(() => {
+        recentlyExecuted = false;
+      }, time);
+    };
+  }
+
+  function triggerEvent() {
+    console.log('Event triggered!');
+  }
+  const throttledTriggerEvent = throttle(triggerEvent, 1000);
+
+  return (
+    <div>
+      <button onClick={() => throttledTriggerEvent()}>Click me!</button>
+    </div>
+  );
+}
 ```
