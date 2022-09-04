@@ -1,5 +1,81 @@
 # JavaScript
 
+## ESNext
+
+#### ES2022
+
+- Private properties and methods in classes
+- Top-level await in modules
+- `Array.prototype.at()` equivalent to `arr[]`
+
+#### ES2021
+
+- `String.prototype.replaceAll()`
+- Logical assignment operators: `||=`, `&&=`, `??=`
+- Numeric separator: `1_000_000`
+- `Promise.any()`
+
+#### ES2020
+
+- Nullish coalescing operator: `??`
+- Optional chaining operator: `?.`
+- `Promise.allSettled()`
+- Dynamic import via `import()`
+- `BigInt` primitive type
+- `globalThis`
+
+#### ES2019
+
+- `Array.prototype.flat() / flatMap()`
+- `Object.fromEntries()`: reverse of `Object.entries()`
+- Optional catch binding: parameter `error` is optional after `catch`
+- `String.prototype.trimStart() / trimEnd()`
+
+#### ES2018
+
+- Object spread operator: `...` for objects
+- `Promise.prototype.finally()`
+- Asynchronous iterators: `for async (... of ...)`
+- Asynchronous generators: `yield` promises
+
+#### ES2017
+
+- `String.prototype.padStart() / padEnd()`
+- `Object.values()`
+- `Object.entries()`
+- `async` / `await`
+
+#### ES2016
+
+- Exponentiation operator: `**`
+- `Array.prototype.includes()`
+
+#### ES2015 (ES6)
+
+- `String.prototype.startsWith() / endsWith() / includes() / repeat()`
+- Template literals: `` `Hello %{name}` ``
+- `Symbol` primitive type
+- `let` / `const`
+- Destructuring: `const { a, b } = obj` / `const [a, b] = arr`
+- Default function parameters: `function func(x, y=0) { ... }`
+- Rest parameters: `function func(a, ...restArgs) { ... }`
+- Spread operator: `...` for iterables (arrays)
+- Arrow functions: `(...) => { ... }`
+- Method definitions in objects: `{ myMethod(x, y) {...} }`
+- Property value shorthands: `const obj = { a, b }` is equivalent to `{ a: a, b: b }`
+- Computed property keys in objects: `{ [key]: ... }`
+- `Object.assign()`
+- Classes
+- Modules: `export` / `import`
+- `for ... of ...`
+- `Array.from() / to()`, `Array.prototype.entries() / keys() / values() / find() / findIndex() / copyWithin() / fill()`
+- `Map`, `WeakMap`, `Set`: maps, weakMaps and sets
+- Typed arrays
+- Iterables and Iterators
+- Generators
+- `Promise`: promises
+- `Proxy`: proxies
+
 ## This
 
 `this` is the context object that points to different objects depending on the context.
@@ -896,3 +972,31 @@ function curry(func) {
   };
 }
 ```
+
+## Behind the Scene
+
+### Memory Management
+
+In JavaScript, the memory allocation and release are automated. JavaScript uses mark-and-sweep algorithm for garbage collection: from the root (global object), periodically find objects that are reachable from the roots, and garbage collect ones that are not reachable. This prevent the issue of circular references where two objects refer to each other but are not referred from anywhere else. This will result in a memory leak in a naive reference-counting algorithm.
+
+### The Event Loop
+
+#### Runtime concepts
+
+- **Stack**
+
+  Records currently executing functions. New function called is pushed to the stack and is popped when the function returns. Note that function parameters and local variables declared in a function are stored in the heap instead so that they may remain accessible even after the function has returned.
+
+- **Heap**
+
+  Stores the variables (objects).
+
+- **Queue**
+
+  Stores incoming messages. As the runtime handles an incoming message, it dequeues the message and calls the corresponding function with the message as an input parameter, creating a new stack frame. The handling of messages continue once the stack is emptied.
+
+#### The event loop
+
+In browsers, new messages are added to the queue when an event occurs and there is an event listener attached to it. It can also be added using `setTimeout`. Note the timeout value only indicates the period of time after which the message is added to the queue: hence it is a minimum time rather than a guaranteed time. Also for this reason, `setTimeout` with a timeout value of 0 always delays the callback until the current function stack finishes executing.
+
+Separate runtimes, such as web workers or cross-origin `iframes` keep their own stack, heap, and queue. They can communicate via the `postMessage` method. This also adds a new message to the queue of the target runtime if the runtime is listening `message` events.
