@@ -61,6 +61,19 @@
 - Rest parameters: `function func(a, ...restArgs) { ... }`
 - Spread operator: `...` for iterables (arrays)
 - Arrow functions: `(...) => { ... }`
+
+:::info Arrow Functions
+
+Unlike normal functions, arrow functions
+
+- do not have own `this` and `this` always refers to the context object of the outer scope.
+- do not support `call()` / `apply()`.
+- do not have `arguments` variable.
+- do not have `prototype`.
+- cannot be constructors.
+
+:::
+
 - Method definitions in objects: `{ myMethod(x, y) {...} }`
 - Property value shorthands: `const obj = { a, b }` is equivalent to `{ a: a, b: b }`
 - Computed property keys in objects: `{ [key]: ... }`
@@ -1000,3 +1013,27 @@ In JavaScript, the memory allocation and release are automated. JavaScript uses 
 In browsers, new messages are added to the queue when an event occurs and there is an event listener attached to it. It can also be added using `setTimeout`. Note the timeout value only indicates the period of time after which the message is added to the queue: hence it is a minimum time rather than a guaranteed time. Also for this reason, `setTimeout` with a timeout value of 0 always delays the callback until the current function stack finishes executing.
 
 Separate runtimes, such as web workers or cross-origin `iframes` keep their own stack, heap, and queue. They can communicate via the `postMessage` method. This also adds a new message to the queue of the target runtime if the runtime is listening `message` events.
+
+:::info Macrotasks and Microtasks
+
+All of these tasks are known as the **macrotasks**:
+
+- Loading of external scripts via `<script />`
+- Dispatching UI event such as `mousemove` and triggering handlers
+- When a timeout specified by `setTimeout` is reached
+- ...
+
+In contrast, these are **microtasks**:
+
+- Executing callbacks (`then/catch/finally`) of promises
+- Executing functions with `queueMicrotask(func)`
+
+The event loop works as follows:
+
+```
+Macrotask -> Microtask -> Rendering -> Another Macrotask -> ...
+```
+
+Hence, handling of microtasks happens first before handling of another macrotask begins.
+
+:::

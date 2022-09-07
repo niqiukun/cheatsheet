@@ -219,6 +219,14 @@ You may specify both the outer display type and inner display type using propert
     - The element continues on the same line.
     - `width`, `height`, `margin`, `padding`, `border` apply and affect positioning.
 
+  - `none`: do not render the element.
+
+  :::info Info
+
+  The difference between `display:none` and `visibility:hidden` is that `display:none` completely excludes the element by taking it out of the document flow and the element does not take up space, while `visibility:hidden` simply makes the element invisible, but the element still takes up space and child elements are still visible, similar to `opacity:0`.
+
+  :::
+
   See the [complete list of elements here](https://www.w3schools.com/html/html_blocks.asp).
 
   <details>
