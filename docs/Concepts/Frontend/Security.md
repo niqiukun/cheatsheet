@@ -2,6 +2,12 @@
 
 ## Types of Attacks
 
+### Clickjacking
+
+Clickjacking happens when the attacker tricks a user to click on something that looks authentic but in fact is not. A common way of achieving this is to create a malicious element on top of the authentic page, typically embedded in an `iframe`.
+
+One way to address this is to prevent the site from being embedded in the `iframe` of an untrusted domain. This can be achieved by setting `frame-ancestors` of the CSP header to whitelist trusted domains that are allowed to embed the page.
+
 ### Cross-Site Scripting (XSS)
 
 :::tip Info
