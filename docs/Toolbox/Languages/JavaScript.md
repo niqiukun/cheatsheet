@@ -895,6 +895,39 @@ function Example() {
 }
 ```
 
+An alternative implementation without `CancellablePromise`:
+
+```jsx live
+function Example() {
+  function debounce(func, time) {
+    let timer, promise, _resolve;
+    return function (...args) {
+      if (!promise) {
+        promise = new Promise((resolve, reject) => {
+          _resolve = resolve;
+        });
+      }
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        _resolve(func.apply(this, args));
+      }, time);
+      return promise;
+    };
+  }
+
+  function triggerEvent() {
+    console.log('Event triggered!');
+  }
+  const debouncedTriggerEvent = debounce(triggerEvent, 1000);
+
+  return (
+    <div>
+      <button onClick={() => debouncedTriggerEvent()}>Click me!</button>
+    </div>
+  );
+}
+```
+
 ### Throttle
 
 Let's design a throttle function:
